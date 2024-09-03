@@ -1,4 +1,5 @@
 import { Request, Response } from "express"
+import bcrypt from 'bcryptjs'
 import { loginSchema, registerSchema } from "../models/validators/userSchemas"
 import { CreateUserDTO } from "../models/dto/UserDTO"
 import UserRespository from "../models/repositories/UserRepository"
@@ -16,16 +17,22 @@ export default class AuthController {
         }
 
         const repository = new UserRespository()
-        const userFromDb = await repository.findByEmail(credentials.email)
 
-        if (!userFromDb || userFromDb.password !== credentials.password) {
-            res.status(401).json({ message: "Invalid credentials" })
-            return
+        try {
+            const userFromDb = await repository.findByEmail(credentials.email)
+
+            if (!userFromDb || !bcrypt.compareSync(credentials.password, userFromDb.password)) {
+                res.status(401).json({ message: "Invalid credentials" })
+                return
+            }
+
+            const token = generateToken(userFromDb)
+
+            res.json({ token })
+        } catch (error) {
+            console.log(error)
+            res.status(500).json({ message: 'Something went wrong' })
         }
-
-        const token = generateToken(userFromDb)
-
-        res.json({ token })
     }
 
     public readonly register = async (req: Request, res: Response) => {
@@ -38,9 +45,20 @@ export default class AuthController {
             return
         }
 
-        const repository = new UserRespository()
-        const newUser = await repository.create(user)
+        const hashedPassword = bcrypt.hashSync(user.password, 10)
 
-        res.status(201).json(newUser)
+        const repository = new UserRespository()
+
+        try {
+            const newUser = await repository.create({ ...user, password: hashedPassword })
+            res.status(200).json(newUser)
+        } catch (error) {
+            if (error.code === 'P2002') {
+                res.status(409).json({ message: 'User already exists' })
+                return
+            }
+            console.log(error)
+            res.status(500).json({ message: 'Something went wrong' })
+        }
     }
 }

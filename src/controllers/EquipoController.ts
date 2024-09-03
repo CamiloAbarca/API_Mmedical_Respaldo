@@ -9,16 +9,35 @@ export default class EquipoController {
     public readonly getAll = async (req: Request, res: Response) => {
         const user = req.user as UserTokenPayload
         const repository = new EquipoRepository(user.sub)
-        const equipos: EquipoDTO[] = await repository.findAll()
-        res.json(equipos)
+
+        try {
+            const equipos: EquipoDTO[] = await repository.findAll()
+            res.json(equipos)
+        } catch (error) {
+            console.log(error)
+            res.status(500).json({ messaje: 'Something went wrong' })
+        }
     }
 
     public readonly getById = async (req: Request, res: Response) => {
         const { id } = req.params
         const user = req.user as UserTokenPayload
         const repository = new EquipoRepository(user.sub)
-        const equipo = await repository.findById(parseInt(id))
-        res.json(equipo)
+
+        try {
+            const equipo = await repository.findById(parseInt(id))
+
+            if (!equipo) {
+                res.status(404).json({ message: 'Equipo not found' })
+                return
+            }
+            res.json(equipo)
+        } catch (error) {
+            console.log(error)
+            res.status(500).json({ messaje: 'Something went wrong' })
+        }
+
+
     }
 
     public readonly create = async (req: Request, res: Response) => {
@@ -26,13 +45,25 @@ export default class EquipoController {
 
         try {
             await createEquipoSchema.validateAsync(equipo)
-        } catch(error) {
+        } catch (error) {
             res.status(400).json({ message: error.message })
             return
         }
 
         const user = req.user as UserTokenPayload
         const repository = new EquipoRepository(user.sub)
+
+        try {
+            const newEquipo = await repository.create(equipo)
+            res.json(newEquipo)
+        } catch (error) {
+            if (error.code === 'P2002') {
+                res.status(409).json({ message: 'Equipo already exists' })
+                return
+            }
+            console.log(error)
+            res.status(500).json({ message: 'Something went wrong' })
+        }
 
         const newEquipo = await repository.create(equipo)
 
@@ -46,25 +77,43 @@ export default class EquipoController {
 
         try {
             await updateEquipoSchema.validateAsync(equipo)
-        } catch(error) {
+        } catch (error) {
             res.status(400).json({ message: error.message })
             return
         }
 
         const user = req.user as UserTokenPayload
         const repository = new EquipoRepository(user.sub)
-        await repository.update(parseInt(id), equipo)
-        res.sendStatus(204)
+
+        try {
+            await repository.update(parseInt(id), equipo)
+            res.sendStatus(204)
+        } catch (error) {
+            if (error.code === 'P2002') {
+                res.status(409).json({ message: 'Equipo already exists' })
+                return
+            }
+            console.log(error)
+            res.status(500).json({ message: 'Something went wrong' })
+        }
+
 
     }
 
     public readonly delete = async (req: Request, res: Response) => {
         const { id } = req.params
-        
+
         const user = req.user as UserTokenPayload
         const repository = new EquipoRepository(user.sub)
-        await repository.delete(parseInt(id))
-        res.sendStatus(204)
+
+        try {
+            await repository.delete(parseInt(id))
+            res.sendStatus(204)
+        } catch (error) {
+            console.log(error)
+            res.status(500).json({ message: 'Something went wrong' })
+        }
+
 
     }
 }
