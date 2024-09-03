@@ -1,0 +1,48 @@
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Equipos {
+    id Int @id @default(autoincrement())
+    marca String @db.VarChar(60)
+    modelo String @db.VarChar(60)
+    serieEquipo String @db.VarChar(60)
+    fechaIngreso DateTime @db.Date()
+    fechaEntrega DateTime @db.Date()
+    fechaMantencion DateTime @db.Date()
+    detalle String
+    otroDetalle String
+    accesorios String
+    estado String @db.VarChar(60)
+    razonSocial String @db.VarChar(250)
+    centroMedico String @db.VarChar(250)
+    personaContacto String @db.VarChar(60)
+    fono Int
+    email String @db.VarChar(60)
+    user User? @relation(fields: [userId], references: [id])
+    userId Int?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    //@@unique([name])
+    @@map("equipos")
+}
+
+
+model User {
+  id Int @id @default(autoincrement())
+  name String @db.VarChar(60)
+  lastName String @db.VarChar(60)
+  email String @unique @db.VarChar(250)
+  password String @db.VarChar(255)
+  equipos Equipos[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
