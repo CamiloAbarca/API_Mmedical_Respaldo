@@ -42,7 +42,3 @@ On src folder:
 
 **app.ts:** This file is the main application file. It will be used to configure the express application.
 # API_Mmedical
-# API_Mmedical_cloud
-# API_Mmedical_cloud
-# API_Mmedical_cloud
-# API_Mmedical_Respaldo
